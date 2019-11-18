@@ -4,8 +4,8 @@ import csv
 import os.path
 import time
 
-sfloor = 100 #size of lower bounds of salt
-sceiling = 1000 #upper bounds of salt
+sfloor = 5000000 #size of lower bounds of salt
+sceiling = 5000100 #upper bounds of salt
 
 constants = [int(abs(math.sin(i+1)) * 2**32) & 0xFFFFFFFF for i in range(64)] #constants as defined by md5
 rotate_amounts = [7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
@@ -66,7 +66,7 @@ def check_pass():#fucntion to check user password
         
         password = input("Enter password\n")
         with open("team1shadow.txt", "r") as shadow:
-            csv_file = csv.reader(shadow, delimiter=',')
+            csv_file = csv.reader(shadow, delimiter='$')
             for row in csv_file: #for every user in team1shadow.txt
                 if (row[0] == user): # if username matches what was entered
                     salt = row[1]
@@ -87,7 +87,7 @@ def check_pass():#fucntion to check user password
 def check_match(user): #see if user exists
     found = 0
     with open("team1shadow.txt", "r") as shadow:
-        csv_file = csv.reader(shadow, delimiter=',')
+        csv_file = csv.reader(shadow, delimiter='$')
         for row in csv_file:
             if (row[0] == user):
                 found = 1
@@ -105,7 +105,7 @@ def createuser(): #creates a user with a password
     password = salt + password #add salt to the password
     password = md5_to_hex(find_hash(password.encode()))#hash it
     with open("team1shadow.txt", "a") as shadow:
-        shadow.write("%s,%s,%s\n" % (user, salt, password)) #store username, salt, and hashed password in file
+        shadow.write("%s$%s$%s\n" % (user, salt, password)) #store username, salt, and hashed password in file
 
 def rainbow(): #make a rainbow table
         dictionary = input("Enter wordlist file\n")#the wordlist you would like to use
@@ -118,14 +118,14 @@ def rainbow(): #make a rainbow table
                                 for row in wordlist:
                                         counter += 1
                                         password = row.rstrip("\n\r") #remove newlines
-                                        password = password.replace(",","")#get rid of commas due to csv
+                                        password = password.replace("$","")#get rid of $ due to using as delimiter
                                         password = ''.join(i if ord(i) < 128 else '' for i in password) #had errors with ascii characters > 128
                                         print("hashing %s with salt" % password)
                                         for i in range(sfloor, sceiling):
                                                 counter1 += 1
                                                 md5 = str(i) + password
                                                 md5 = md5_to_hex(find_hash(md5.encode()))
-                                                rainbow.write("%s,%s\n" % (password, md5))
+                                                rainbow.write("%s$%s\n" % (password, md5))
         else:
                 print("file does not exist")
                 return 1
@@ -148,8 +148,8 @@ def rainbowAttack(): #rainbow table attack
 
         with open(shadowfile, "r") as shadow:
                 with open (rainbowtable, "r") as rainbow:
-                        csv_shadow = csv.reader(shadow, delimiter=",")
-                        csv_rainbow = csv.reader(rainbow, delimiter = ",")
+                        csv_shadow = csv.reader(shadow, delimiter="$")
+                        csv_rainbow = csv.reader(rainbow, delimiter = "$")
                         for row in csv_rainbow:
                                 for i in csv_shadow:
                                         if row[1] == i[2]:#if the hashes match
@@ -182,10 +182,10 @@ if __name__=='__main__':
                                 salt = str(randint(sfloor,sceiling))
                                 password = salt + test
                                 password = password.rstrip("\n\r")
-                                password = password.replace(",","")
+                                password = password.replace("$","")
                                 password = ''.join(i if ord(i) < 128 else ' ' for i in password)
                                 password = md5_to_hex(find_hash(password.encode()))
-                                testing.write("%s, %s, %s\n" %(test, salt, password))
+                                testing.write("%s$%s$%s\n" %(test, salt, password))
                 end = time.time()
                 print("Average time to hash in seconds: ", (end - start) / 100) #average time over the 100 runs
         elif option == "5":
